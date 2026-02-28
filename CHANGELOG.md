@@ -2,6 +2,18 @@
 
 All changes to this project are documented in this file.
 
+## v1.5.0
+
+### Added
+
+- AIs from 7230 to 7259
+- Added datetime parsing: YYMMddHHmm
+
+### Fixed
+
+- Missing entry for AI entries: 03, 7011
+- Wrong entries for some logistic measure AIs (33nn, 34nn, 35nn, 36nn)
+
 ## v1.4.0
 
 ### Added

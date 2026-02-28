@@ -7,6 +7,7 @@
 
 import {
   parseDate,
+  parseDatetime,
   parseFixedLength,
   parseFixedLengthMeasure,
   parseTemperature,
@@ -602,17 +603,14 @@ function identifyAI(codestring: string, parserOptions: ParserOptions): ParseResu
                   // Signature required flag
                   return parseVariableLength("4323", "SIG REQUIRED", codestring, fncChar, 1);
                 case "4":
-                  // FIXME: actually a datetime (yyMMddHHmm)
                   // Not before delivery date/time
-                  return parseVariableLength("4324", "NBEF DEL DT", codestring, fncChar, 10);
+                  return parseDatetime("4324", "NBEF DEL DT", codestring, parserOptions.utcTimestamps, fncChar);
                 case "5":
-                  // FIXME: actually a datetime (yyMMddHHmm)
                   // Not before delivery date/time
-                  return parseVariableLength("4325", "NAFT DEL DT", codestring, fncChar, 10);
+                  return parseDatetime("4325", "NAFT DEL DT", codestring, parserOptions.utcTimestamps, fncChar);
                 case "6":
-                  // FIXME: actually a date
                   // Release date
-                  return parseVariableLength("4326", "REL DATE", codestring, fncChar, 6);
+                  return parseDate("4326", "REL DATE", codestring, parserOptions.utcTimestamps);
                 default:
                   throw new InvalidAiError("432", fourthNumber);
               }
@@ -688,8 +686,7 @@ function identifyAI(codestring: string, parserOptions: ParserOptions): ParseResu
                   return parseVariableLength("7010", "PROD METHOD", codestring, fncChar, 2);
                 case "1":
                   // Test by date
-                  // FIXME: actually a datetime (yyMMddHHmm)
-                  return parseVariableLength("7011", "TEST BY DATE", codestring, fncChar, 10, true);
+                  return parseDatetime("7011", "TEST BY DATE", codestring, parserOptions.utcTimestamps, fncChar);
                 default:
                   throw new InvalidAiError("701", fourthNumber);
               }
@@ -717,7 +714,7 @@ function identifyAI(codestring: string, parserOptions: ParserOptions): ParseResu
                 "703" + fourthNumber,
                 "PROCESSOR # " + fourthNumber,
                 codestring,
-                fncChar
+                fncChar,
               );
             case "4":
               switch (fourthNumber) {
@@ -760,8 +757,93 @@ function identifyAI(codestring: string, parserOptions: ParserOptions): ParseResu
             default:
               throw new InvalidAiError("71", thirdNumber);
           }
-
-        // TODO: add AIs from 723s to 7259
+        case "2":
+          thirdNumber = codestring.slice(2, 3);
+          switch (thirdNumber) {
+            case "3":
+              switch (fourthNumber) {
+                case "0":
+                  // Certification reference #0
+                  return parseVariableLength("7230", "CERT # 0", codestring, fncChar);
+                case "1":
+                  // Certification reference #1
+                  return parseVariableLength("7231", "CERT # 1", codestring, fncChar);
+                case "2":
+                  // Certification reference #2
+                  return parseVariableLength("7232", "CERT # 2", codestring, fncChar);
+                case "3":
+                  // Certification reference #3
+                  return parseVariableLength("7233", "CERT # 3", codestring, fncChar);
+                case "4":
+                  // Certification reference #4
+                  return parseVariableLength("7234", "CERT # 4", codestring, fncChar);
+                case "5":
+                  // Certification reference #5
+                  return parseVariableLength("7235", "CERT # 5", codestring, fncChar);
+                case "6":
+                  // Certification reference #6
+                  return parseVariableLength("7236", "CERT # 6", codestring, fncChar);
+                case "7":
+                  // Certification reference #7
+                  return parseVariableLength("7237", "CERT # 7", codestring, fncChar);
+                case "8":
+                  // Certification reference #8
+                  return parseVariableLength("7238", "CERT # 8", codestring, fncChar);
+                case "9":
+                  // Certification reference #9
+                  return parseVariableLength("7239", "CERT # 9", codestring, fncChar);
+                default:
+                  throw new InvalidAiError("723", fourthNumber);
+              }
+            case "4":
+              switch (fourthNumber) {
+                case "0":
+                  // Protocol ID
+                  return parseVariableLength("724", "PROTOCOL", codestring, fncChar);
+                case "1":
+                  // AIDC media type
+                  return parseVariableLength("7041", "AIDC MEDIA TYPE", codestring, fncChar);
+                default:
+                  throw new InvalidAiError("724", fourthNumber);
+              }
+            case "5":
+              switch (fourthNumber) {
+                case "0":
+                  // Date of birth
+                  return parseVariableLength("7250", "DOB", codestring, fncChar);
+                case "1":
+                  // Date and time of birth
+                  return parseVariableLength("7251", "DOB TIME", codestring, fncChar);
+                case "2":
+                  // Biological sex
+                  return parseVariableLength("7252", "BIO SEX", codestring, fncChar, 1);
+                case "3":
+                  // Family name of person
+                  return parseVariableLength("7253", "FAMILY NAME", codestring, fncChar);
+                case "4":
+                  // Given name of person
+                  return parseVariableLength("7254", "GIVEN NAME", codestring, fncChar);
+                case "5":
+                  // Name suffix of person
+                  return parseVariableLength("7255", "SUFFIX", codestring, fncChar);
+                case "6":
+                  // Full name of person
+                  return parseVariableLength("7256", "FULL NAME", codestring, fncChar);
+                case "7":
+                  // Address of person
+                  return parseVariableLength("7257", "PERSON ADDR", codestring, fncChar);
+                case "8":
+                  // Baby birth sequence indicator
+                  return parseVariableLength("7258", "BIRTH SEQUENCE", codestring, fncChar);
+                case "9":
+                  // Baby of family name
+                  return parseVariableLength("7259", "BABY", codestring, fncChar);
+                default:
+                  throw new InvalidAiError("725", fourthNumber);
+              }
+            default:
+              throw new InvalidAiError("72", thirdNumber);
+          }
         default:
           throw new InvalidAiError("7", secondNumber);
       }

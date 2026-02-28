@@ -7,7 +7,7 @@ import {
   InternalError,
   InvalidAiError,
   NUMERIC_REGEX,
-  ParsedElementClass,
+  ParsedElementClass
 } from "./utils";
 
 /**
@@ -120,6 +120,116 @@ export function parseDate(ai: string, title: string, codestring: string, utc: bo
   elementToReturn.dataString = dateYYMMDD;
 
   return { element: elementToReturn, codestring: codestring.slice(offSet + 6, codestring.length) };
+}
+
+/**
+ * dates in GS1-elements have the format "YYMMDDHHmm".
+ * This function generates a new ParsedElement and tries to fill a
+ * JS-date into the "data"-part.
+ * @param {String} ai    the AI to use for the ParsedElement
+ * @param {String} title the title to use for the ParsedElement
+ * @param {String} codestring the codestring to parse the date from
+ * @param {Boolean} utc  whether to parse the date as UTC or local time
+ */
+export function parseDatetime(ai: string, title: string, codestring: string, utc: boolean, fncChar: string): ParseResult<Date> {
+  const elementToReturn = new ParsedElementClass<Date>(ai, title, ElementType.D);
+  const offSet = ai.length;
+  const posOfFNC = codestring.indexOf(fncChar);
+  let dateYYMMDD = "";
+  if (posOfFNC === -1) {
+    dateYYMMDD = codestring.slice(offSet, codestring.length);
+  } else {
+    dateYYMMDD = codestring.slice(offSet, posOfFNC);
+  }
+
+  if (dateYYMMDD.length !== 10) {
+    throw new BarcodeError(
+      BarcodeErrorCodes.FixedLengthDataTooShort,
+      "37",
+      `Data length ${dateYYMMDD.length} is not of expected length 10 for AI "${ai}".`
+    );
+  }
+
+  if (!NUMERIC_REGEX.test(dateYYMMDD)) {
+    throw new BarcodeError(
+      BarcodeErrorCodes.NumericDataExpected,
+      "39",
+      `Numeric data expected for AI "${ai}", but got "${dateYYMMDD}".`
+    );
+  }
+
+  let yearAsNumber = 0;
+  let monthAsNumber = 0;
+  let dayAsNumber = 0;
+  let hourAsNumber = 0;
+  let minuteAsNumber = 0;
+
+  try {
+    yearAsNumber = Number.parseInt(dateYYMMDD.slice(0, 2), 10);
+  } catch (error_) {
+    throw new InternalError("33", error_ as Error);
+  }
+
+  try {
+    monthAsNumber = Number.parseInt(dateYYMMDD.slice(2, 4), 10) - 1;
+  } catch (error_) {
+    throw new InternalError("34", error_ as Error);
+  }
+
+  try {
+    dayAsNumber = Number.parseInt(dateYYMMDD.slice(4, 6), 10);
+  } catch (error_) {
+    throw new InternalError("35", error_ as Error);
+  }
+
+  try {
+    hourAsNumber = Number.parseInt(dateYYMMDD.slice(6, 8), 10);
+  } catch (error_) {
+    throw new InternalError("35", error_ as Error);
+  }
+
+  try {
+    minuteAsNumber = Number.parseInt(dateYYMMDD.slice(8, 10), 10);
+  } catch (error_) {
+    throw new InternalError("35", error_ as Error);
+  }
+
+  if (utc) {
+    elementToReturn.data.setUTCHours(hourAsNumber, minuteAsNumber, 0, 0);
+  } else {
+    elementToReturn.data.setHours(hourAsNumber, minuteAsNumber, 0, 0);
+  }
+
+  // we are in the 21st century, but section 7.12 of the specification
+  // states that years 51-99 should be considered to belong to the
+  // 20th century:
+  const currentCentury = Math.floor(new Date().getFullYear() / 100);
+  const currentYear = new Date().getFullYear() % 100;
+  const diff = yearAsNumber - currentYear;
+  if (diff >= 51 && diff <= 99) {
+    yearAsNumber = (currentCentury - 1) * 100 + yearAsNumber;
+  } else if (diff >= -99 && diff <= -50) {
+    yearAsNumber = (currentCentury + 1) * 100 + yearAsNumber;
+  } else {
+    yearAsNumber = currentCentury * 100 + yearAsNumber;
+  }
+
+  if (!checkValidDate(yearAsNumber, monthAsNumber, dayAsNumber)) {
+    throw new BarcodeError(
+      BarcodeErrorCodes.InvalidDate,
+      "36",
+      `Invalid date "${dateYYMMDD}" for AI "${ai}".`
+    );
+  }
+
+  if (dayAsNumber === 0) {
+    monthAsNumber++;
+  }
+
+  elementToReturn.data.setFullYear(yearAsNumber, monthAsNumber, dayAsNumber);
+  elementToReturn.dataString = dateYYMMDD;
+
+  return { element: elementToReturn, codestring: codestring.slice(offSet + 10, codestring.length) };
 }
 
 /**

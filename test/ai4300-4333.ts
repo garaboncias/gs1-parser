@@ -102,14 +102,14 @@ describe("GS1 AIs 4300-4333 Parsing", () => {
       const barcode = VALID_GTIN + "43242401011530"; // YYMMDDHHMM format
       const result = parser.decode(barcode);
       expect(result.data[GS1Field.NBEF_DEL_DT]).toBeDefined();
-      expect(result.data[GS1Field.NBEF_DEL_DT]!.data).toBe("2401011530");
+      expect(result.data[GS1Field.NBEF_DEL_DT]!.dataString).toBe("2401011530");
     });
 
     it("should parse AI 4325 (NAFT DEL DT)", () => {
       const barcode = VALID_GTIN + "43252501311700"; // YYMMDDHHMM format
       const result = parser.decode(barcode);
       expect(result.data[GS1Field.NAFT_DEL_DT]).toBeDefined();
-      expect(result.data[GS1Field.NAFT_DEL_DT]!.data).toBe("2501311700");
+      expect(result.data[GS1Field.NAFT_DEL_DT]!.dataString).toBe("2501311700");
     });
 
     it("should parse AI 4326 (REL DATE)", () => {
