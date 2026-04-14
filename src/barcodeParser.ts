@@ -20,7 +20,8 @@ import type { BarcodeAnswer, GS1DecodedData, ParseResult, ParserOptions } from "
 import {
   BarcodeError,
   BarcodeErrorCodes,
-  cleanCodestring,
+  cleanCodeString,
+  ElementType,
   GROUP_SEPARATOR,
   InternalError,
   InvalidAiError,
@@ -39,7 +40,7 @@ import {
  *                   ParsedElement is returned, together with the
  *                   still unparsed rest of codestring.
  */
-function identifyAI(codestring: string, parserOptions: ParserOptions): ParseResult<GS1DecodedData> {
+function parseNextElement(codestring: string, parserOptions: ParserOptions): ParseResult<GS1DecodedData> {
   if (!parserOptions.fncChar) {
     parserOptions.fncChar = GROUP_SEPARATOR;
   }
@@ -1020,8 +1021,13 @@ function parseBarcode(barcode: string, parserOptions: ParserOptions): BarcodeAns
     throw new BarcodeError(BarcodeErrorCodes.EmptyBarcode, "31", "The barcode is empty or not a string.");
   }
 
-  const barcodelength = barcode.length;
-  const answer: BarcodeAnswer = { codeName: "", denormalized: "", parsedCodeItems: [] }; // the object to return
+  const barcodeLength = barcode.length;
+  const answer: BarcodeAnswer = {
+    isValid: true,
+    codeName: "",
+    denormalized: "",
+    parsedCodeItems: []
+  }; // the object to return
   let restOfBarcode = ""; // the rest of the barcode, when first
   // elements are spliced away
   const symbologyIdentifier = barcode.slice(0, 3);
@@ -1044,24 +1050,24 @@ function parseBarcode(barcode: string, parserOptions: ParserOptions): BarcodeAns
   switch (symbologyIdentifier) {
     case "]C1":
       answer.codeName = "GS1-128";
-      restOfBarcode = barcode.slice(3, barcodelength);
+      restOfBarcode = barcode.slice(3, barcodeLength);
       break;
     case "]e0":
       answer.codeName = "GS1 DataBar";
-      restOfBarcode = barcode.slice(3, barcodelength);
+      restOfBarcode = barcode.slice(3, barcodeLength);
       break;
     case "]e1":
     case "]e2":
       answer.codeName = "GS1 Composite";
-      restOfBarcode = barcode.slice(3, barcodelength);
+      restOfBarcode = barcode.slice(3, barcodeLength);
       break;
     case "]d2":
       answer.codeName = "GS1 DataMatrix";
-      restOfBarcode = barcode.slice(3, barcodelength);
+      restOfBarcode = barcode.slice(3, barcodeLength);
       break;
     case "]Q3":
       answer.codeName = "GS1 QR Code";
-      restOfBarcode = barcode.slice(3, barcodelength);
+      restOfBarcode = barcode.slice(3, barcodeLength);
       break;
     default:
       answer.codeName = "";
@@ -1086,7 +1092,7 @@ function parseBarcode(barcode: string, parserOptions: ParserOptions): BarcodeAns
   answer.parsedCodeItems = [];
 
   /**
-   * The follwoing part calls "identifyAI" in a loop, until
+   * The following part calls "identifyAI" in a loop, until
    * the whole barcode is parsed (or an error occurs).
    *
    * It uses the following strategy:
@@ -1101,8 +1107,11 @@ function parseBarcode(barcode: string, parserOptions: ParserOptions): BarcodeAns
 
   while (restOfBarcode.length > 0) {
     try {
-      currentElement = identifyAI(restOfBarcode, parserOptions);
-      restOfBarcode = cleanCodestring(currentElement.codestring, parserOptions.fncChar!);
+      currentElement = parseNextElement(restOfBarcode, parserOptions);
+      restOfBarcode = cleanCodeString(currentElement.codestring, parserOptions.fncChar!);
+      if (currentElement.element.type == ElementType.Error) {
+        answer.isValid = false;
+      }
       answer.parsedCodeItems.push(currentElement.element);
       answer.denormalized += "(" + currentElement.element.ai + ")" + currentElement.element.dataString;
     } catch (e) {
