@@ -80,6 +80,7 @@ describe("GS1 Date Parsing - Edge Cases", () => {
 
     // Invalid month/day combinations where day != 00
     "221431",     // month 14
+    "1234567",    // too long
   ];
 
   for (const dateValue of invalidDates) {
@@ -94,18 +95,18 @@ describe("GS1 Date Parsing - Edge Cases", () => {
     }
   }
 
-  // special cases
-  const invalidDates2 = [
-    "1234567",    // too long
-  ];
-  for (const dateValue of invalidDates2) {
-    for (const ai of DATE_AIS) {
-      it(`should be invalid GS1 date AI ${ai}: "${dateValue}"`, () => {
-        const barcode = VALID_GTIN + ai + dateValue;
-        expect(() => parser.decode(barcode)).toThrow();
-      });
-    }
-  }
+  // // special cases
+  // const invalidDates2 = [
+  //   "1234567",    // too long
+  // ];
+  // for (const dateValue of invalidDates2) {
+  //   for (const ai of DATE_AIS) {
+  //     it(`should be invalid GS1 date AI ${ai}: "${dateValue}"`, () => {
+  //       const barcode = VALID_GTIN + ai + dateValue;
+  //       expect(() => parser.decode(barcode)).toThrow();
+  //     });
+  //   }
+  // }
 
   //
   // AMBIGUOUS EDGE CASES

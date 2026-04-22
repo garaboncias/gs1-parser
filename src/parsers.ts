@@ -41,13 +41,18 @@ export function parseFloatingPoint(
  * @param {String} codeString the codeString to parse the date from
  * @param {Boolean} utc  whether to parse the date as UTC or local time
  */
-export function parseDate(ai: string, title: string, codeString: string, utc: boolean): ParseResult<Date> {
+export function parseDate(ai: string, title: string, codeString: string, utc: boolean, fncChar: string): ParseResult<Date> {
   let elementToReturn = new ParsedElementClass<Date>(ai, title, ElementType.Date);
   const offSet = ai.length;
   let dataString: string = '';
   try {
     const dateYYMMDD = codeString.slice(offSet, offSet + 6);
-    dataString = dateYYMMDD;
+    const posOfFNC = fncChar ? codeString.indexOf(fncChar, offSet) : offSet + 6;
+    if (posOfFNC == -1) {
+      dataString = codeString.slice(offSet);
+    } else {
+      dataString = codeString.slice(offSet, posOfFNC);
+    }
 
     if (utc) {
       elementToReturn.data.setUTCHours(0, 0, 0, 0);
@@ -129,7 +134,7 @@ export function parseDate(ai: string, title: string, codeString: string, utc: bo
   }
 
   elementToReturn.dataString = dataString;
-  return { element: elementToReturn, codestring: codeString.slice(offSet + 6, codeString.length) };
+  return { element: elementToReturn, codestring: codeString.slice(offSet + dataString.length) };
 }
 
 /**
@@ -138,18 +143,18 @@ export function parseDate(ai: string, title: string, codeString: string, utc: bo
  * JS-date into the "data"-part.
  * @param {String} ai    the AI to use for the ParsedElement
  * @param {String} title the title to use for the ParsedElement
- * @param {String} codestring the codestring to parse the date from
+ * @param {String} codeString the codestring to parse the date from
  * @param {Boolean} utc  whether to parse the date as UTC or local time
  */
-export function parseDatetime(ai: string, title: string, codestring: string, utc: boolean, fncChar: string): ParseResult<Date> {
+export function parseDatetime(ai: string, title: string, codeString: string, utc: boolean, fncChar: string): ParseResult<Date> {
   let elementToReturn = new ParsedElementClass<Date>(ai, title, ElementType.Date);
   const offSet = ai.length;
-  const posOfFNC = codestring.indexOf(fncChar);
+  const posOfFNC = codeString.indexOf(fncChar);
   let dateYYMMDD = "";
   if (posOfFNC === -1) {
-    dateYYMMDD = codestring.slice(offSet, codestring.length);
+    dateYYMMDD = codeString.slice(offSet, codeString.length);
   } else {
-    dateYYMMDD = codestring.slice(offSet, posOfFNC);
+    dateYYMMDD = codeString.slice(offSet, posOfFNC);
   }
   try {
     if (dateYYMMDD.length !== 10) {
@@ -241,7 +246,7 @@ export function parseDatetime(ai: string, title: string, codestring: string, utc
     elementToReturn = new ParsedElementClass<Date>(ai, title, ElementType.Error, error as Error);
   }
   elementToReturn.dataString = dateYYMMDD;
-  return { element: elementToReturn, codestring: codestring.slice(offSet + 10, codestring.length) };
+  return { element: elementToReturn, codestring: codeString.slice(offSet + 10, codeString.length) };
 }
 
 /**

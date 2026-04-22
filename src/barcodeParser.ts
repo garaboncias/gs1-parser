@@ -94,23 +94,23 @@ function parseNextElement(codestring: string, parserOptions: ParserOptions): Par
           return parseVariableLength("10", "BATCH/LOT", codestring, fncChar, lotLen ?? 20);
         case "1":
           // Production Date (YYMMDD)
-          return parseDate("11", "PROD DATE", codestring, parserOptions.utcTimestamps);
+          return parseDate("11", "PROD DATE", codestring, parserOptions.utcTimestamps, fncChar);
         case "2":
           // Due Date (YYMMDD)
-          return parseDate("12", "DUE DATE", codestring, parserOptions.utcTimestamps);
+          return parseDate("12", "DUE DATE", codestring, parserOptions.utcTimestamps, fncChar);
         case "3":
           // Packaging Date (YYMMDD)
-          return parseDate("13", "PACK DATE", codestring, parserOptions.utcTimestamps);
+          return parseDate("13", "PACK DATE", codestring, parserOptions.utcTimestamps, fncChar);
         // AI "14" isn't defined
         case "5":
           // Best Before Date (YYMMDD)
-          return parseDate("15", "BEST BEFORE or BEST BY", codestring, parserOptions.utcTimestamps);
+          return parseDate("15", "BEST BEFORE or BEST BY", codestring, parserOptions.utcTimestamps, fncChar);
         case "6":
           // Sell By Date (YYMMDD)
-          return parseDate("16", "SELL BY", codestring, parserOptions.utcTimestamps);
+          return parseDate("16", "SELL BY", codestring, parserOptions.utcTimestamps, fncChar);
         case "7":
           // Expiration Date (YYMMDD)
-          return parseDate("17", "USE BY OR EXPIRY", codestring, parserOptions.utcTimestamps);
+          return parseDate("17", "USE BY OR EXPIRY", codestring, parserOptions.utcTimestamps, fncChar);
         default:
           throw new InvalidAiError("1", secondNumber);
       }
@@ -611,7 +611,7 @@ function parseNextElement(codestring: string, parserOptions: ParserOptions): Par
                   return parseDatetime("4325", "NAFT DEL DT", codestring, parserOptions.utcTimestamps, fncChar);
                 case "6":
                   // Release date
-                  return parseDate("4326", "REL DATE", codestring, parserOptions.utcTimestamps);
+                  return parseDate("4326", "REL DATE", codestring, parserOptions.utcTimestamps, fncChar);
                 default:
                   throw new InvalidAiError("432", fourthNumber);
               }
@@ -666,7 +666,7 @@ function parseNextElement(codestring: string, parserOptions: ParserOptions): Par
                   return parseVariableLength("7005", "CATCH AREA", codestring, fncChar, 12);
                 case "6":
                   // First freeze date
-                  return parseDate("7006", "FIRST FREEZE DATE", codestring, parserOptions.utcTimestamps);
+                  return parseDate("7006", "FIRST FREEZE DATE", codestring, parserOptions.utcTimestamps, fncChar);
                 case "7":
                   // Harvest date
                   // FIXME: actually a double date (start date - end date)
@@ -1115,7 +1115,14 @@ function parseBarcode(barcode: string, parserOptions: ParserOptions): BarcodeAns
       answer.parsedCodeItems.push(currentElement.element);
       answer.denormalized += "(" + currentElement.element.ai + ")" + currentElement.element.dataString;
     } catch (e) {
-      if (e instanceof InternalError) {
+      if (parserOptions.ignoreInvalidFields) {
+        const pos = restOfBarcode.indexOf(parserOptions.fncChar!);
+        if (pos == -1) {
+          restOfBarcode = ''; // finish
+        } else {
+          restOfBarcode = restOfBarcode.slice(Math.max(1, pos)); // we have to step at least 1
+        }
+      } else if (e instanceof InternalError) {
         handleInternalError(e);
       } else {
         throw e;

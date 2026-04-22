@@ -584,6 +584,10 @@ interface ParserOptions {
      * If true, date fields are returned as UTC timestamps instead of local dates
      */
     utcTimestamps?: boolean;
+    /**
+     * Silently skip fields with invalid AI (only useful when fncChar is used as separator)
+     */
+    ignoreInvalidFields?: boolean;
 }
 
 declare class GS1Parser {
